@@ -74,7 +74,24 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOCAL_SKILLS="$SCRIPT_DIR/skills"
 
 usage() {
-  sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'
+  # Inlined rather than read from "$0": under `curl ... | bash` there is no
+  # script file on disk for $0 to point at.
+  cat <<'USAGE'
+install.sh — install the qianshou-* skills into your coding-agent directories.
+
+  ./install.sh                      install into ~/.cursor, ~/.claude, ~/.codex
+  ./install.sh --target ~/.foo      install into a specific agent root (repeatable)
+  ./install.sh --local              install from this checkout instead of GitHub
+  ./install.sh --force              reinstall over an existing copy
+  ./install.sh --ref <git-ref>      pull from another branch/tag (default: main)
+
+For each agent root, e.g. ~/.cursor:
+  root missing          -> the agent isn't installed here, skip it
+  root, no skills/      -> create skills/, then install into it
+  root/skills exists    -> install straight in
+
+Skill files are fetched from raw.githubusercontent.com over HTTPS.
+USAGE
 }
 
 say()  { printf '%s\n' "$*"; }

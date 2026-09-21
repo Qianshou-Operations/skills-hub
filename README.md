@@ -15,14 +15,6 @@ Qianshou 的 coding agent skill 集合。收录的 skill 统一带 `qianshou-` �
 `install.sh` 会把上面三个 skill 装到你的 coding agent 目录，默认是 `~/.cursor/skills`、`~/.claude/skills`、`~/.codex/skills`。
 
 ```bash
-git clone https://github.com/Qianshou-Operations/skills-hub.git
-cd skills-hub
-./install.sh
-```
-
-不想 clone 也可以直接跑：
-
-```bash
 curl -fsSL https://raw.githubusercontent.com/Qianshou-Operations/skills-hub/main/install.sh | bash
 ```
 
