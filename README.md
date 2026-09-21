@@ -27,20 +27,47 @@ curl -fsSL https://raw.githubusercontent.com/Qianshou-Operations/skills-hub/main
 | 根目录不存在 | 跳过 —— 说明你没装这个 agent，不创建多余目录 |
 | 根目录存在，没有 `skills/` | 创建 `skills/` 后安装 |
 | `skills/` 已存在 | 直接装进去 |
-| 目标 skill 已存在 | 跳过，不覆盖 |
+| 目标 skill 已存在 | 跳过，不覆盖；`--force` 才替换 |
 
-文件从 `raw.githubusercontent.com` 下载，先落到临时目录、全部成功才移动到目标位置，所以下载中途失败不会留下半成品。
+文件从 `raw.githubusercontent.com` 下载，先落到临时目录，**全部文件下载并校验通过后**才会写入目标目录，所以下载中途失败不会留下半成品。下载并发 4 路，单文件失败会以 2s、4s 退避重试 3 次。
 
 ### 参数
 
 ```bash
-./install.sh                              # 默认三个目录
-./install.sh --target ~/.foo              # 只装到指定目录（可重复）
-./install.sh --local                      # 从本地 checkout 装，不走网络
-./install.sh --force                      # 覆盖已安装的（整目录替换）
-./install.sh --ref <git-ref>              # 换分支或 tag，默认 main
-./install.sh --help
+./install.sh                       # 安装（默认模式）
+./install.sh --list                # 列出仓库里的 skill
+./install.sh --verify              # 校验已装内容与安装时记录是否一致
+./install.sh --uninstall           # 卸载
+
+-t, --target DIR   指定 agent 根目录，可重复
+    --ref REF      分支或 tag，默认 main
+    --local        从本地 ./skills 装，不走网络（开发用）
+    --force        覆盖已安装的
+    --no-backup    配合 --force，直接删除而不是备份
+    --dry-run      只打印将要做什么，不写任何东西
+-j, --jobs N       并发下载数，默认 4
+    --retries N    单文件重试次数，默认 3
+    --timeout N    连接超时秒数，默认 10
+-q, --quiet        只输出警告和错误
+-v, --verbose      额外打印每个下载的文件
+-h, --help
 ```
+
+### 覆盖与备份
+
+`--force` 不会直接删掉旧目录，而是先把它移到 `<agent 根>/skills/.qianshou-backups/<时间戳>/`，同一轮覆盖的 skill 共用一个时间戳目录。你自己在 skill 目录里加的笔记、改动都留在备份里。不想要备份就加 `--no-backup`。
+
+### 校验
+
+安装时会为每个 skill 算一个内容摘要，记在 `<agent 根>/skills/.qianshou-skills.stamp`。`--verify` 重新计算当前内容并比对：
+
+```
+[ok]     qianshou-code-review matches its main install
+[warn]   qianshou-security-best-practices has local modifications (digest differs)
+[fail]   qianshou-i-have-adhd is incomplete — agents/gemini.toml is gone
+```
+
+`.qianshou-skills.stamp` 和 `.qianshou-backups/` 都以 `.` 开头，不会被 agent 当成 skill 加载。
 
 ### 手动安装
 
@@ -70,6 +97,8 @@ curl -fsSL https://raw.githubusercontent.com/Qianshou-Operations/skills-hub/main
 ## 二次开发
 
 新增 skill 或往 skill 里加文件时，需要同步更新 `install.sh` 顶部的 `MANIFEST` —— 它是手写的文件清单，脚本按它逐文件下载。漏加会导致安装时缺文件。
+
+脚本要求 bash 3.2+（macOS 自带版本）和 `curl`，刻意没有使用 `mapfile`、关联数组、`${var,,}`、nameref 这些 bash 4+ 特性，保证在干净的 macOS 上直接可跑。
 
 ## 来源与许可
 
